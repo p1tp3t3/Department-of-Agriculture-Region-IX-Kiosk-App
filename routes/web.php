@@ -1,27 +1,43 @@
 <?php
-
-use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
+use App\Http\Controllers\Auth\AccountController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\GatePassController;
+use App\Http\Controllers\OTPVerificationController;
+use App\Http\Controllers\Auth\NewPasswordController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-});
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/', [AuthenticatedSessionController::class, 'create'])
+->name('type.user');
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
+Route::post('/log-in', [AuthenticatedSessionController::class, 'store'])
+->name('log-in');
 
-require __DIR__.'/auth.php';
+
+Route::post('/contact/{username}', [AccountController::class, 'getContact']);
+
+Route::get('/forgot-password', [OTPVerificationController::class, 'contactIndex'])
+->name('verify.otp');
+
+Route::post('/forgot-password/otp', [OTPVerificationController::class, 'store'])
+->name('verify.send_otp');
+
+Route::post('/forgot-password/recover', [NewPasswordController::class, 'store'])
+->name('verify.recover');
+
+/*
+Route::get('/forgot-password/edit-password', [OTPVerificationController::class, 'contactIndex'])
+->name('verify.edit-password');
+Route::post('/forgot-password/recover-password', [OTPVerificationController::class, 'contactIndex'])
+->name('verify.recover');
+*/
+
+Route::middleware('auth')
+->get('/log-out', [AuthenticatedSessionController::class, 'destroy'])
+->name('log-out');
+
+Route::get('/gatepass-validation', [GatePassController::class, 'qrcodeIndex']);
+
+
+require __DIR__ . '/auth.php';
+
